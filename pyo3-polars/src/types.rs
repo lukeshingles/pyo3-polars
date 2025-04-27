@@ -13,7 +13,7 @@ use polars_lazy::frame::LazyFrame;
 #[cfg(feature = "lazy")]
 use polars_plan::dsl::Expr;
 #[cfg(feature = "lazy")]
-use polars_plan::plans::DslPlan;
+use polars_plan::dsl::DslPlan;
 #[cfg(feature = "lazy")]
 use polars_utils::pl_serialize;
 use pyo3::exceptions::{PyTypeError, PyValueError};
@@ -218,7 +218,7 @@ impl<'a> FromPyObject<'a> for PyLazyFrame {
         let b = b.as_bytes();
 
         let lp: DslPlan = pl_serialize::SerializeOptions::default()
-            .deserialize_from_reader(&*b)
+            .deserialize_from_reader::<_, _, false>(&*b)
             .map_err(
             |e| PyPolarsErr::Other(
                 format!("Error when deserializing LazyFrame. This may be due to mismatched polars versions. {}", e)
@@ -235,7 +235,7 @@ impl<'a> FromPyObject<'a> for PyExpr {
         let s = ob.call_method0("__getstate__")?.extract::<Vec<u8>>()?;
 
         let e: Expr = pl_serialize::SerializeOptions::default()
-            .deserialize_from_reader(&*s)
+            .deserialize_from_reader::<_, _, false>(&*s)
             .map_err(
             |e| PyPolarsErr::Other(
                 format!("Error when deserializing 'Expr'. This may be due to mismatched polars versions. {}", e)
@@ -356,7 +356,7 @@ impl<'py> IntoPyObject<'py> for PyLazyFrame {
         let instance = cls.call_method1(intern!(py, "__new__"), (&cls,)).unwrap();
 
         let buf = pl_serialize::SerializeOptions::default()
-            .serialize_to_bytes(&self.0.logical_plan)
+            .serialize_to_bytes::<_, false>(&self.0.logical_plan)
             .unwrap();
         instance.call_method1("__setstate__", (&buf,))?;
         Ok(instance)
@@ -375,7 +375,7 @@ impl<'py> IntoPyObject<'py> for PyExpr {
         let instance = cls.call_method1(intern!(py, "__new__"), (&cls,))?;
 
         let buf = pl_serialize::SerializeOptions::default()
-            .serialize_to_bytes(&self.0)
+            .serialize_to_bytes::<_, false>(&self.0)
             .unwrap();
 
         instance

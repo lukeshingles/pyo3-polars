@@ -18,6 +18,9 @@ impl std::convert::From<PyPolarsErr> for PyErr {
     fn from(err: PyPolarsErr) -> PyErr {
         fn convert(err: &PolarsError) -> PyErr {
             match err {
+                PolarsError::AssertionError(err) => {
+                    pyo3::exceptions::PyAssertionError::new_err(err.to_string())
+                },
                 PolarsError::ComputeError(err) => ComputeError::new_err(err.to_string()),
                 PolarsError::NoData(err) => NoDataError::new_err(err.to_string()),
                 PolarsError::ShapeMismatch(err) => ShapeError::new_err(err.to_string()),
